@@ -13,6 +13,12 @@ type AddAccountRequestBody struct {
 	Amount float64 `json:"amount"`
 }
 
+type TransferAccountRequestBody struct {
+	From   string  `json:"from"`
+	To     string  `json:"to"`
+	Amount float64 `json:"amount"`
+}
+
 func main() {
 	err := models.ConnectDatabase()
 	checkErr(err)
@@ -36,7 +42,6 @@ func createAccount(c *gin.Context) {
 	}
 
 	var account models.Account
-
 	account.Number = body.Number
 	account.Amount = body.Amount
 
@@ -49,7 +54,24 @@ func createAccount(c *gin.Context) {
 }
 
 func transfer(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "Record Updated!"})
+	body := TransferAccountRequestBody{}
+
+	if err := c.BindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	var transfer models.Transfer
+	transfer.From = body.From
+	transfer.To = body.To
+	transfer.Amount = body.Amount
+
+	msg := models.TransferValues(transfer)
+	if msg != "" {
+		c.JSON(200, gin.H{"message": msg})
+	} else {
+		c.JSON(404, gin.H{"error": "Transfer error!"})
+	}
 }
 
 func getAllAccounts(c *gin.Context) {
