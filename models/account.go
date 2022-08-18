@@ -9,7 +9,7 @@ import (
 var DB *sql.DB
 
 type Account struct {
-	Id     int32   `json:"id"`
+	Id     int64   `json:"id"`
 	Number string  `json:"account_number"`
 	Amount float64 `json:"amount"`
 }
@@ -48,4 +48,28 @@ func GetAccounts() ([]Account, error) {
 	}
 
 	return accounts, nil
+}
+
+func InsertAccount(account Account) (id int64) {
+	stmt, err := DB.Prepare("INSERT INTO account(account_number, amount) VALUES($1, $2)")
+	if err != nil {
+		return 0
+	}
+
+	res, err := stmt.Exec(account.Number, account.Amount)
+	if err != nil {
+		return 0
+	}
+
+	lid, err := res.LastInsertId()
+	if err != nil {
+		return 0
+	}
+
+	err = stmt.Close()
+	if err != nil {
+		return 0
+	}
+
+	return lid
 }

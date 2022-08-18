@@ -2,10 +2,16 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gitlab.com/erikurbanski/desafio1-full-cycle/models"
 )
+
+type AddAccountRequestBody struct {
+	Number string  `json:"account_number"`
+	Amount float64 `json:"amount"`
+}
 
 func main() {
 	err := models.ConnectDatabase()
@@ -22,7 +28,24 @@ func main() {
 }
 
 func createAccount(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "A new Record Created!"})
+	body := AddAccountRequestBody{}
+
+	if err := c.BindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	var account models.Account
+
+	account.Number = body.Number
+	account.Amount = body.Amount
+
+	accountId := models.InsertAccount(account)
+	if accountId == 0 {
+		c.JSON(404, gin.H{"error": "Insert error!"})
+	} else {
+		c.JSON(http.StatusCreated, accountId)
+	}
 }
 
 func transfer(c *gin.Context) {
